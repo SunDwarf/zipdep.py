@@ -28,7 +28,6 @@
 #
 # ======================================================================================================================
 import os
-import tempfile
 import zipfile
 from types import ModuleType
 import sys
@@ -108,7 +107,7 @@ def extract_path(obj: ModuleType):
     if hasattr(obj, "__package__") and obj.__package__:
         print("found package: {}".format(obj.__package__))
         if obj.__package__ == obj.__name__:
-            print("name == package, skipping")
+            pass
         else:
             try:
                 mod = importlib.import_module(obj.__package__)
@@ -185,7 +184,6 @@ def __main__():
                 path = extract_path(mod)
                 if path:
                     modules[name] = (path, name)
-    print(modules)
     # create in-memory zip
     in_mem_zip = io.BytesIO()
     # create zipfile
