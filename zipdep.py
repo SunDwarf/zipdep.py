@@ -35,8 +35,6 @@ from base64 import b85encode
 import importlib
 import io
 
-import shutil
-
 __version__ = "1.0.0"
 
 uppertemplate = """#!/usr/bin/env python
@@ -98,7 +96,6 @@ def zipdir(path, ziph, name):
         if '__pycache__' in root:
             continue
         for file in files:
-            print(os.path.join(root, file), "->", os.path.join(newroot, file))
             ziph.write(os.path.join(root, file), arcname=os.path.join(newroot, file))
             pass
 
@@ -167,11 +164,14 @@ def __main__():
             if path:
                 if len(path) == 2:
                     modules[path[1]] = path
-                else:
+                elif path:
                     modules[name] = (path, name)
         # next, check if it has a __module__
         if hasattr(obj, "__module__"):
             print("found object: {} with __module__: {}".format(name, obj.__module__))
+            if not obj.__module__:
+                print("skipping object in local scope")
+                continue
             # attempt to import
             if obj.__module__ in modules:
                 print("module already imported; skipping")
@@ -184,6 +184,8 @@ def __main__():
                 path = extract_path(mod)
                 if path:
                     modules[name] = (path, name)
+    print("constructing zipfile with modules: {}".format(', '.join(["{} from {}"
+                                                         .format(name, path[0]) for (name, path) in modules.items()])))
     # create in-memory zip
     in_mem_zip = io.BytesIO()
     # create zipfile
