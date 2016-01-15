@@ -28,7 +28,7 @@ zipdep.py is entirely self-contained, and will install to your `bin` directory, 
 
 zipdep.py is very simple to use.
 
-`zipdep file1.py file2.py # etc etc`
+`zipdep.py file1.py file2.py # etc etc`
 
 This will automatically package up all imported dependencies into a file called `file1.py.zipdep.py`.
 
