@@ -128,7 +128,7 @@ def extract_path(obj: ModuleType):
             return None
         print("path:", obj.__file__)
         if not 'site-packages' in obj.__file__:
-            print("module {} appears to be stdlib, skipping".format(obj.__name__))
+            print("module {} appears to be stdlib/project file, skipping".format(obj.__name__))
             return None
         else:
             return obj.__file__
@@ -142,19 +142,20 @@ def __main__():
     if len(sys.argv) == 1:
         print("usage: zipdep file.py")
         sys.exit(1)
-    filename = sys.argv[1]
-    if not os.path.exists(filename):
-        print("file {} does not exist".format(filename))
-        sys.exit(1)
+    filenames = sys.argv[1:]
+    final_zipdep = sys.argv[1]
     # declare temporary dictionary
     loc = {"__name__": "__zipdep"}
     # exec() file
-    with open(filename) as f:
-        try:
-            exec(f.read(), {}, loc)
-        except ImportError as e:
-            print("seems like your modules weren't installed. error: {}".format(e))
-            raise
+    for filename in filenames:
+        if not os.path.exists(filename):
+            print("skipping file {} - does not exist".format(filename))
+        with open(filename) as f:
+            try:
+                exec(f.read(), {}, loc)
+            except ImportError as e:
+                print("seems like your modules weren't installed. error: {}".format(e))
+                raise
     # scan locals
     modules = {}
     for name, obj in loc.items():
@@ -200,17 +201,17 @@ def __main__():
     # encode in b85
     b85_data = b85encode(in_mem_zip.read())
     b85_str = b85_data.decode()
-    b85 = '\n'.join([b85_str[i:i+64] for i in range(0, len(b85_str), 64)])
+    b85 = '\n'.join([b85_str[i:i+80] for i in range(0, len(b85_str), 80)])
     # now the fun part
     templated = uppertemplate.format(zd_version=__version__, zd_zipfile=b85)
     in_mem_zip.close()
     # open file in r, read in contents, then re-open in 'w' to overwrite
-    with open(filename) as f:
+    with open(final_zipdep) as f:
         contents = f.read()
-    with open(filename + '.zipdep.py', 'w') as f:
+    with open(final_zipdep + '.zipdep.py', 'w') as f:
         # Now save.
         f.write(templated + contents + lowertemplate)
-    print("success! written to file {}".format(filename + ".zipdep.py"))
+    print("success! written to file {}".format(final_zipdep + ".zipdep.py"))
 
 
 if __name__ == "__main__":
