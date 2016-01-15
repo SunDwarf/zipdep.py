@@ -1,5 +1,3 @@
-import os
-
 import yaml
 import base64
 from tornado import auth

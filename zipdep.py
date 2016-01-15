@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # ======================================================================================================================
 #
-# Zipdep.py
+# zipdep.py
 #
 # This allows you to package up all your dependencies into one big zipfile, which can then be imported from.
 # It will automatically be shoved onto the front of the chosen file.
@@ -36,6 +37,7 @@ try:
     __b95_available = True
 except ImportError:
     from base64 import b85encode as encode
+    __b95_available = False
 
 import importlib
 import io
