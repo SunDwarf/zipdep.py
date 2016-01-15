@@ -35,6 +35,13 @@ from base64 import b85encode
 import importlib
 import io
 
+if hasattr(zipfile, "ZIP_LZMA"):
+    mode = zipfile.ZIP_LZMA
+elif hasattr(zipfile, "ZIP_DEFLATED"):
+    mode = zipfile.ZIP_DEFLATED
+else:
+    mode = zipfile.ZIP_STORED
+
 __version__ = "1.0.0"
 
 uppertemplate = """#!/usr/bin/env python
@@ -190,7 +197,7 @@ def __main__():
     # create in-memory zip
     in_mem_zip = io.BytesIO()
     # create zipfile
-    zf = zipfile.ZipFile(in_mem_zip, mode='w')
+    zf = zipfile.ZipFile(in_mem_zip, mode='w', compression=mode)
     # zip up modules
     for mod, path in modules.items():
         print("zipping module", mod)
