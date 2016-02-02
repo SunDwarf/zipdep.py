@@ -8,6 +8,8 @@ except ImportError as e:
 else:
     __test2_e = "this doesn't work in the test environment."
 
+__zipdep_zipmodules = ["yaml", "base64", "tornado"]
+
 
 def test():
     pass

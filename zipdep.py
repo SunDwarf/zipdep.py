@@ -41,6 +41,7 @@ except ImportError:
 
 import importlib
 import io
+from collections import OrderedDict
 
 # https://bugs.python.org/issue17004
 # https://bugs.python.org/issue21751
@@ -216,7 +217,7 @@ def __main__():
     filenames = sys.argv[1:]
     final_zipdep = sys.argv[1]
     # declare temporary dictionary
-    loc = {"__name__": "__zipdep"}
+    loc = OrderedDict({"__name__": "__zipdep"})
     # exec() file
     for filename in filenames:
         if not os.path.exists(filename):
@@ -229,33 +230,43 @@ def __main__():
                 raise
     # scan locals
     modules = {}
-    for name, obj in loc.items():
-        if isinstance(obj, ModuleType):
-            print("found module:", name)
-            path = extract_path(obj)
+    if "__zipdep_zipmodules" in loc:
+        print("found `zipdep_zipmodules, loading modules from here instead of scanning")
+        # Just load a list of modules from here.
+        for mod in loc["__zipdep_zipmodules"]:
+            print("importing {}".format(mod))
+            md = importlib.import_module(mod)
+            path = extract_path(md)
             if path:
-                if len(path) == 2:
-                    modules[path[1]] = path
-                elif path:
-                    modules[name] = (path, name)
-        # next, check if it has a __module__, for things such as sub-level functions (from x import y)
-        if hasattr(obj, "__module__"):
-            print("found object: {} with __module__: {}".format(name, obj.__module__))
-            if not obj.__module__:
-                print("skipping object in local scope")
-                continue
-            # attempt to import
-            if obj.__module__ in modules:
-                print("module already imported; skipping")
-            try:
-                mod = importlib.import_module(obj.__module__)
-            except ImportError:
-                print("unable to import module: {}".format(obj.__module__))
-            else:
-                print("found&imported module:", obj.__module__)
-                path = extract_path(mod)
+                modules[mod] = (path, mod)
+    else:
+        for name, obj in loc.items():
+            if isinstance(obj, ModuleType):
+                print("found module:", name)
+                path = extract_path(obj)
                 if path:
-                    modules[name] = (path, name)
+                    if len(path) == 2:
+                        modules[path[1]] = path
+                    elif path:
+                        modules[name] = (path, name)
+            # next, check if it has a __module__, for things such as sub-level functions (from x import y)
+            if hasattr(obj, "__module__"):
+                print("found object: {} with __module__: {}".format(name, obj.__module__))
+                if not obj.__module__:
+                    print("skipping object in local scope")
+                    continue
+                # attempt to import
+                if obj.__module__ in modules:
+                    print("module already imported; skipping")
+                try:
+                    mod = importlib.import_module(obj.__module__)
+                except ImportError:
+                    print("unable to import module: {}".format(obj.__module__))
+                else:
+                    print("found&imported module:", obj.__module__)
+                    path = extract_path(mod)
+                    if path:
+                        modules[name] = (path, name)
     print("constructing zipfile with modules: {}".format(
         ', '.join(["{} from {}".format(name, path[0]) for (name, path) in modules.items()])))
     # create in-memory zip
