@@ -154,7 +154,8 @@ __zipdep__cleanup()
 def zipdir(path, ziph, name):
     # Walk over files
     if not os.path.isdir(path):
-        print(os.path.join(name, path), "->")
+        print(os.path.join(name, path), "->", name)
+        ziph.write(os.path.join(name, path), arcname=name + '.py')
     for root, dirs, files in os.walk(path):
         # Sanitize root
         newroot = '/'.join([_.lstrip("/") for _ in root.partition(name) if _][1:])
@@ -187,12 +188,16 @@ def extract_path(obj: ModuleType):
                     return path, obj.__package__
     # Easy! We have a __path__ to get.
     if hasattr(obj, "__path__"):
-        print("path:", obj.__path__[0])
-        if not 'site-packages' in obj.__path__[0]:
-            print("module {} appears to be stdlib, skipping".format(obj.__name__))
-            return None
+        if len(obj.__path__) == 0:
+            # oh, nevermind
+            pass
         else:
-            return obj.__path__[0]
+            print("path:", obj.__path__[0])
+            if not 'site-packages' in obj.__path__[0]:
+                print("module {} appears to be stdlib, skipping".format(obj.__name__))
+                return None
+            else:
+                return obj.__path__[0]
     # Also as easy.
     elif hasattr(obj, "__file__"):
         if obj.__file__ == "__zipdep":
@@ -210,6 +215,8 @@ def extract_path(obj: ModuleType):
 
 
 def __main__():
+    # insert into path
+    sys.path.insert(0, os.getcwd())
     # get argv
     if len(sys.argv) == 1:
         print("usage: zipdep file.py")
